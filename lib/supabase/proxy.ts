@@ -12,6 +12,19 @@ const PROTECTED_PREFIXES = ["/agent", "/seller", "/admin"];
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    // Supabase keys haven't been added to .env.local yet — let every page
+    // load instead of crashing, so the scaffold is browsable before setup
+    // is finished. Once real keys are added, login-gating below kicks in.
+    console.warn(
+      "[proxy] Supabase env vars are missing — skipping auth check. See .env.local.example.",
+    );
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
