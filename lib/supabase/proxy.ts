@@ -60,10 +60,25 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // TODO (next phase): once a `profiles` table with a `role` column exists,
-  // look up the signed-in user's role here and redirect them away from any
-  // portal that doesn't match (e.g. a seller hitting /admin gets sent back
-  // to /seller instead of just being let through).
+  // Role gate: each portal belongs to one role. Anyone opening a portal that
+  // isn't theirs is sent to their own (e.g. an agent opening /seller lands on
+  // /agent). Note this is navigation convenience + defense in depth — the
+  // real data isolation is the RLS policies in the database, which hold even
+  // if this check were bypassed entirely.
+  if (isProtectedPath && user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    const portal = "/" + profile?.role;
+    if (profile && !request.nextUrl.pathname.startsWith(portal)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = portal;
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
 
   return supabaseResponse;
 }

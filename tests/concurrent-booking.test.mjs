@@ -20,11 +20,14 @@ async function createAgent(email) {
     email,
     password: "concurrency-test-pw",
     email_confirm: true,
+    user_metadata: { role: "agent" },
   });
   if (error) throw new Error(`createUser ${email}: ${error.message}`);
+  // The on_auth_user_created trigger creates the profiles row; upsert in case
+  // this test runs against a database from before that trigger existed.
   const { error: profileError } = await admin
     .from("profiles")
-    .insert({ id: data.user.id, role: "agent" });
+    .upsert({ id: data.user.id, role: "agent" });
   if (profileError) throw new Error(`profile ${email}: ${profileError.message}`);
 
   const client = createClient(URL, ANON_KEY);

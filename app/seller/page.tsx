@@ -19,6 +19,13 @@ export default async function SellerPortal() {
     .select("*, products(brand, model)")
     .order("uploaded_at", { ascending: false });
 
+  // Bookings placed against this seller's lots -- visible thanks to the
+  // "sellers can view bookings on their lots" RLS policy.
+  const { data: orders } = await supabase
+    .from("bookings")
+    .select("*, stock_lots(id, location, products(brand, model))")
+    .order("booked_at", { ascending: false });
+
   async function createLot(formData: FormData) {
     "use server";
     const supabase = await createClient();
@@ -159,6 +166,29 @@ export default async function SellerPortal() {
                 </button>
               </form>
             )}
+          </div>
+        ))}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Orders on your lots</h2>
+        {!orders?.length && (
+          <p className="text-zinc-500">No bookings against your lots yet.</p>
+        )}
+        {orders?.map((order) => (
+          <div
+            key={order.id}
+            className="flex items-center justify-between rounded border border-zinc-200 p-4 text-sm dark:border-zinc-800"
+          >
+            <span>
+              {order.stock_lots?.products?.brand}{" "}
+              {order.stock_lots?.products?.model} ·{" "}
+              {order.quantity_booked} units ·{" "}
+              {new Date(order.booked_at).toLocaleString()}
+            </span>
+            <span className="rounded bg-zinc-100 px-2 py-0.5 dark:bg-zinc-800">
+              {order.status}
+            </span>
           </div>
         ))}
       </section>

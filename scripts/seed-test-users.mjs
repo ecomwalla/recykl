@@ -11,6 +11,7 @@ const admin = createClient(
 const TEST_USERS = [
   { email: "seller@recykl.test", role: "seller" },
   { email: "agent@recykl.test", role: "agent" },
+  { email: "admin@recykl.test", role: "admin" },
 ];
 const PASSWORD = "recykl-test-123";
 
@@ -19,6 +20,7 @@ for (const { email, role } of TEST_USERS) {
     email,
     password: PASSWORD,
     email_confirm: true,
+    user_metadata: { role },
   });
 
   if (error) {
@@ -26,9 +28,12 @@ for (const { email, role } of TEST_USERS) {
     continue;
   }
 
+  // The on_auth_user_created trigger already made a profiles row, but it
+  // deliberately never grants 'admin' -- so set the intended role explicitly
+  // here, where the service-role key (server-side trust) is required.
   const { error: profileError } = await admin
     .from("profiles")
-    .insert({ id: created.user.id, role });
+    .upsert({ id: created.user.id, role });
 
   console.log(
     profileError

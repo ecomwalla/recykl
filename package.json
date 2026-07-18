@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:concurrency": "node --env-file=.env.local --test \"tests/**/*.test.mjs\""
+    "test": "node --env-file=.env.local --test \"tests/**/*.test.mjs\"",
+    "test:concurrency": "npm test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
